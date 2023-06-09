@@ -1,8 +1,7 @@
 import sys, re, os
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
-import ipywidgets as widgets
+from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from wordcloud import WordCloud, STOPWORDS
 
@@ -36,8 +35,10 @@ class NaiveBayesClassifier:
         self.__words[word][clazz] += 1
     
     def __extractPureWords(self, text:str):
+        tokens = word_tokenize(text)
+        words = [w for w in tokens if re.match('.*[\w].*', w)]
         splited = re.findall("[\w']+", text)
-        return [self.__lemmatizer.lemmatize(w.lower()) for w in splited]
+        return [self.__lemmatizer.lemmatize(w.lower()) for w in words]
     
     def add(self, clazz:str, description:str):
         words = self.__extractPureWords(description)
@@ -198,14 +199,16 @@ if __name__ == '__main__':
         os.makedirs(output)
     
     if '--train' in sys.argv or not os.path.exists(f'{output}/test.csv') or not os.path.exists(f'{output}/trained.txt'):
+        print()
+        print('Reading data...')
+        
         df_train, df_test = __parseDataset(f'{dataset}/df_text_eng.csv', 0.1)
         df_test.to_csv(f'{output}/test.csv')
-        
         nbc = NaiveBayesClassifier()
+        
         print('Training...')
         nbc.learnFromDataframe(df_train)
         nbc.saveToFile(f'{output}/trained.txt')
-        print()
     else:
         nbc = NaiveBayesClassifier(f'{output}/trained.txt')
         df_test = pd.read_csv(f'{output}/test.csv')
