@@ -37,7 +37,6 @@ class NaiveBayesClassifier:
     def __extractPureWords(self, text:str):
         tokens = word_tokenize(text)
         words = [w for w in tokens if re.match('.*[\w].*', w)]
-        splited = re.findall("[\w']+", text)
         return [self.__lemmatizer.lemmatize(w.lower()) for w in words]
     
     def add(self, clazz:str, description:str):
@@ -54,7 +53,6 @@ class NaiveBayesClassifier:
         
         for c, c_desc in self.__classes.items():
             tmp = c_desc["count"] / self.__totalEntries
-            # tmp = 1
             for w in words:
                 if w in self.__words:
                     tmp = tmp * (self.__words[w][c] + 1) / (c_desc["words"] + savedWordsCount)
@@ -105,13 +103,14 @@ class NaiveBayesClassifier:
     
     def __readFromFile(self, fileName:str):
         with open(fileName, 'r') as f:
-            te, cns, ccs, cws, *words = f.readlines()
-        self.__totalEntries = int(te)
-        classNames = cns[:-1].split(' ')
-        self.__classes = dict(zip( classNames, [ {'count':int(c), 'words':int(w)} for c, w in zip(ccs.split(' '), cws.split(' ')) ] ))
+            totalEntities, classNames, classCounts, classWordCounts, *words = f.readlines()
+        self.__totalEntries = int(totalEntities)
+        classNameList = classNames[:-1].split(' ')
+        self.__classes = dict(zip( classNameList, [ {'count':int(c), 'words':int(w)} 
+                                                   for c, w in zip(classCounts.split(' '), classWordCounts.split(' ')) ] ))
         for wl in words:
             word, *counts = wl.split(' ')
-            self.__words[word] = dict(zip( classNames, [int(c) for c in counts] ))
+            self.__words[word] = dict(zip( classNameList, [int(c) for c in counts] ))
             
             
     def __str__(self):
@@ -227,8 +226,4 @@ if __name__ == '__main__':
     
     if '--run' in sys.argv or '--all' in sys.argv:
         __run(nbc)
-    
-    
-    
-    
-    
+   
