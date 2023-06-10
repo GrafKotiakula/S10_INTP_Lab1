@@ -63,7 +63,7 @@ class NaiveBayesClassifier:
     def analyze(self, text:str):
         return list(self.analyzeGetAll(text).keys())[0]
     
-    def learnFromDataframe(self, data:pd.DataFrame):
+    def learnFromDataFrame(self, data:pd.DataFrame):
         for _, row in data.iterrows():
             self.add(row['class'], row['text'])
     
@@ -112,7 +112,6 @@ class NaiveBayesClassifier:
             word, *counts = wl.split(' ')
             self.__words[word] = dict(zip( classNameList, [int(c) for c in counts] ))
             
-            
     def __str__(self):
         return f'totalEntries: {self.__totalEntries}\nclasses({len(self.__classes)}): {self.__classes}\nwords({len(self.__words)}): {self.__words}'
     
@@ -131,6 +130,9 @@ class NaiveBayesClassifier:
     
     def getTotalEntries(self):
         return self.__totalEntries
+    
+    def getWords(self):
+        return {word : sum(classes.values()) for word, classes in self.__words.items()}
 
 def __parseDataset(srcFile:str, testPartRatio:float):
     df_train = pd.read_csv(srcFile)
@@ -159,12 +161,20 @@ def __checkArgs():
         print('\t--train to force model train again')
         print()
 
-def __describeClassifier(classifier: NaiveBayesClassifier):
+def __describeClassifier(classifier: NaiveBayesClassifier, stopwords:list[str] = STOPWORDS, wordCount:int = 10):
+    words = classifier.getWords()
     print(f'Total entries analyzed: {classifier.getTotalEntries()}')
     print(f'Classifier classes: {classifier.getClasses()}')
+    print(f'Total learned words: {len(words)}')
+    print(f'{wordCount} most common words:')
+    print(f' {"Word":<10} | Frequency ')
+    print(f'={"":=<10}=|===========')
+    wordsToPrint = sorted([(w, c) for w, c in words.items() if w not in stopwords], key= lambda items: items[1], reverse=True)[:wordCount]
+    for word, count in wordsToPrint:
+        print(f' {word:>10} | {count}')
+        
     print()
     
-
 def __printPrecision(classifier: NaiveBayesClassifier, df_test:pd.DataFrame):
     print('Testing...')
     total, classes = classifier.testFromDataFrame(df_test)
@@ -206,7 +216,7 @@ if __name__ == '__main__':
         nbc = NaiveBayesClassifier()
         
         print('Training...')
-        nbc.learnFromDataframe(df_train)
+        nbc.learnFromDataFrame(df_train)
         nbc.saveToFile(f'{output}/trained.txt')
     else:
         nbc = NaiveBayesClassifier(f'{output}/trained.txt')
